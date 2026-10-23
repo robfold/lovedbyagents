@@ -1,0 +1,63 @@
+name: 제품 제보
+description: 에이전트가 쓰기 좋은 제품을 lovedbyagents에 올려 주세요
+title: "[제보] "
+labels: ["submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        운영자가 확인하고 `approved` 라벨을 붙이면 사이트에 자동으로 올라갑니다. 등록되면 이 이슈에 링크를 남기고 닫아 드려요.
+  - type: input
+    id: name
+    attributes:
+      label: 제품 이름
+      placeholder: Resend
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: 링크
+      placeholder: https://resend.com
+    validations:
+      required: true
+  - type: input
+    id: tagline
+    attributes:
+      label: 한 줄 소개
+      description: 에이전트가 이 제품으로 무엇을 할 수 있나요? (120자 이내)
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: 카테고리
+      options:
+        - 개발 도구
+        - 데이터베이스
+        - 결제
+        - 인프라
+        - 이메일
+        - 협업
+        - 모니터링
+        - 기타
+    validations:
+      required: true
+  - type: checkboxes
+    id: sigs
+    attributes:
+      label: 에이전트 체크리스트
+      description: 해당하는 것을 모두 고르세요. 근거 링크는 아래 칸에 남겨 주세요.
+      options:
+        - label: MCP 서버 — 에이전트가 도구로 바로 연결
+        - label: 공개 API — REST·GraphQL로 모든 기능 접근
+        - label: CLI — 터미널 에이전트가 명령으로 조작
+        - label: OpenAPI 스펙 — 기계가 읽는 API 명세 공개
+        - label: llms.txt — 마크다운 문서를 에이전트용으로 제공
+        - label: 키 인증 — 브라우저 로그인 없이 API 키·토큰
+        - label: 샌드박스 — 테스트 모드에서 안전하게 실행
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 근거 링크 (선택)
+      description: MCP 서버 저장소, API 문서, llms.txt 주소 등
