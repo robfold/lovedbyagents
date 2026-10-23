@@ -1,0 +1,54 @@
+name: 승인된 제보 등록
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  publish:
+    if: github.event.label.name == 'approved' && contains(github.event.issue.labels.*.name, 'submission')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: 이슈 폼 파싱
+        id: parse
+        run: |
+          node scripts/parse-issue.mjs "$GITHUB_EVENT_PATH" > product.json
+          cat product.json
+
+      - name: 사이트에 등록
+        id: post
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: |
+          status=$(curl -sS -o resp.json -w '%{http_code}' -X POST "$SITE_URL/api/admin/products" \
+            -H "authorization: Bearer $ADMIN_TOKEN" -H 'content-type: application/json' \
+            --data @product.json)
+          cat resp.json
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: 결과를 이슈에 알리기
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          STATUS: ${{ steps.post.outputs.status }}
+        run: |
+          if [ "$STATUS" = "201" ]; then
+            link=$(node -e "console.log(require('./resp.json').url)")
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body "lovedbyagents에 올라갔어요: $link 투표 부탁드려요."
+            gh issue close "$ISSUE" --repo "$GITHUB_REPOSITORY" --reason completed
+          else
+            err=$(node -e "try{console.log(require('./resp.json').error)}catch{console.log('알 수 없는 오류')}")
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body "등록하지 못했어요 (HTTP $STATUS): $err — 이슈 본문을 고친 뒤 \`approved\` 라벨을 다시 붙여 주세요."
+            gh issue edit "$ISSUE" --repo "$GITHUB_REPOSITORY" --remove-label approved
+            exit 1
+          fi
